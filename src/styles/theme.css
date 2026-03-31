@@ -1,0 +1,203 @@
+/* Shansi Kitchen Theme */
+:root {
+  /* Primary Colors */
+  --primary: #d97706;        /* Warm orange - food-friendly */
+  --primary-light: #f59e0b;
+  --primary-dark: #b45309;
+  
+  /* Accent */
+  --accent: #10b981;         /* Green - freshness */
+  
+  /* Background */
+  --background: #ffffff;
+  --foreground: #1f2937;
+  
+  /* Card & Surface */
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  
+  /* Muted */
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  
+  /* Border & Input */
+  --border: #e5e7eb;
+  
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-pending: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827;
+    --foreground: #f3f4f6;
+    --card: #1f2937;
+    --card-foreground: #f3f4f6;
+    --muted: #374151;
+    --muted-foreground: #d1d5db;
+    --border: #4b5563;
+  }
+}
+
+/* Apply theme to Tailwind */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.bg-background { background-color: var(--background); }
+.text-foreground { color: var(--foreground); }
+.bg-card { background-color: var(--card); color: var(--card-foreground); }
+.bg-muted { background-color: var(--muted); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.border-border { border-color: var(--border); }
+
+/* Status Badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-confirmed {
+  background-color: #dbeafe;
+  color: #1e3a8a;
+}
+
+.status-preparing {
+  background-color: #e9d5ff;
+  color: #581c87;
+}
+
+.status-ready {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.status-out for delivery {
+  background-color: #fce7f3;
+  color: #831843;
+}
+
+.status-delivered {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* Menu Cards */
+.menu-card {
+  background: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.menu-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.menu-card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: var(--muted);
+}
+
+.menu-card-content {
+  padding: 12px;
+}
+
+/* Order Status Badge Styles */
+.period-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.period-card h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--foreground);
+}
+
+.period-card table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.period-card th,
+.period-card td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.period-card th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+/* Bill Styling */
+.bill-header {
+  text-align: center;
+  margin-bottom: 16px;
+  border-bottom: 2px dashed var(--border);
+  padding-bottom: 12px;
+}
+
+.bill-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+
+.bill-header p {
+  font-size: 12px;
+  color: var(--muted-foreground);
+  margin: 2px 0;
+}
+
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.bill-row.total {
+  font-weight: 700;
+  font-size: 15px;
+  border-top: 2px solid var(--foreground);
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menu-card-image {
+    height: 150px;
+  }
+
+  .period-card {
+    margin-bottom: 12px;
+  }
+
+  .bill-header h2 {
+    font-size: 16px;
+  }
+}

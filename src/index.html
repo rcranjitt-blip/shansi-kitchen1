@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shansi Kitchen</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/theme.css">
+  <style>
+    [data-screen] { display: none; }
+    [data-screen].active { display: block; }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 50; align-items: center; justify-content: center; }
+    .modal.open { display: flex; }
+    .modal-content { background: white; border-radius: 8px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: white; padding: 12px 20px; border-radius: 6px; z-index: 100; animation: slideUp 0.3s ease; }
+    @keyframes slideUp { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; justify-content: center; margin: 20px 0; }
+    .bar { flex: 1; background: var(--primary); border-radius: 4px 4px 0 0; position: relative; min-width: 30px; }
+    .bar-tip { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: bold; }
+    .bar-labels { display: flex; gap: 8px; justify-content: center; margin-top: 20px; }
+    .bar-label { font-size: 12px; text-align: center; flex: 1; }
+  </style>
+</head>
+<body class="bg-background text-foreground">
+  <!-- Navigation -->
+  <nav id="navbar" class="bg-primary text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="text-xl font-bold">🍛 Shansi Kitchen</div>
+      <div class="flex items-center gap-4">
+        <button id="cart-badge" class="relative px-4 py-2 bg-accent rounded-lg hover:bg-accent/90 transition">
+          🛒 Cart <span id="cart-count" class="ml-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">0</span>
+        </button>
+        <button id="nav-login" class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition">Login</button>
+        <button id="nav-back" class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition hidden">← Back</button>
+        <button id="nav-logout" class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition hidden">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Home Screen -->
+  <div id="screen-home" data-screen class="active">
+    <div class="max-w-6xl mx-auto px-4 py-12">
+      <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold mb-4">Welcome to Shansi Kitchen</h1>
+        <p class="text-xl text-muted-foreground">Fresh, delicious food delivered to your door</p>
+      </div>
+      <div class="grid md:grid-cols-2 gap-8 mb-12">
+        <div class="bg-card p-8 rounded-lg shadow-md">
+          <div class="text-4xl mb-4">👥</div>
+          <h2 class="text-2xl font-bold mb-4">For Customers</h2>
+          <p class="text-muted-foreground mb-6">Browse our menu, order food, and track your orders</p>
+          <button onclick="showScreen('screen-menu')" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">Order Now</button>
+        </div>
+        <div class="bg-card p-8 rounded-lg shadow-md">
+          <div class="text-4xl mb-4">👨‍💼</div>
+          <h2 class="text-2xl font-bold mb-4">For Admins</h2>
+          <p class="text-muted-foreground mb-6">Manage menu, orders, customers, and view reports</p>
+          <button onclick="showScreen('screen-admin')" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">Admin Panel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Screen -->
+  <div id="screen-menu" data-screen>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-6">Menu</h1>
+      <div class="mb-6">
+        <select id="menu-category-filter" class="px-4 py-2 border border-border rounded-lg">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+      <div id="menu-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Menu items will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Screen -->
+  <div id="screen-cart" data-screen>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-6">Shopping Cart</h1>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="md:col-span-2">
+          <div id="cart-items" class="bg-card p-6 rounded-lg shadow-md">
+            <!-- Cart items will be rendered here -->
+          </div>
+        </div>
+        <div class="bg-card p-6 rounded-lg shadow-md h-fit sticky top-20">
+          <h2 class="text-xl font-bold mb-4">Order Summary</h2>
+          <div id="cart-summary" class="space-y-2 mb-4">
+            <div class="flex justify-between"><span>Subtotal:</span><span id="subtotal">₹0</span></div>
+            <div class="flex justify-between"><span>Delivery:</span><span id="delivery">₹0</span></div>
+            <div class="flex justify-between font-bold text-lg border-t pt-2"><span>Total:</span><span id="total">₹0</span></div>
+          </div>
+          <button id="checkout-btn" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition">Proceed to Checkout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Screen -->
+  <div id="screen-login" data-screen>
+    <div class="max-w-md mx-auto px-4 py-16">
+      <div class="bg-card p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold mb-6 text-center">Login</h1>
+        <form id="login-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Mobile Number</label>
+            <input type="tel" id="login-mobile" placeholder="9876543210" class="w-full px-4 py-2 border border-border rounded-lg" required>
+          </div>
+          <div id="otp-section" class="hidden">
+            <label class="block text-sm font-medium mb-2">OTP</label>
+            <input type="text" id="login-otp" placeholder="Enter OTP" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <button type="button" id="send-otp-btn" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition">Send OTP</button>
+          <button type="button" id="verify-otp-btn" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition hidden">Verify & Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Dashboard Screen -->
+  <div id="screen-customer" data-screen>
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-6">My Orders</h1>
+      <div id="customer-orders" class="grid gap-4">
+        <!-- Customer orders will be rendered here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Dashboard Screen -->
+  <div id="screen-admin" data-screen>
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      
+      <div class="tabs mb-6 flex gap-2 border-b">
+        <button onclick="switchAdminTab('overview')" class="admin-tab-btn px-4 py-2 border-b-2 border-primary font-medium" data-tab="overview">Overview</button>
+        <button onclick="switchAdminTab('orders')" class="admin-tab-btn px-4 py-2 border-b border-border font-medium" data-tab="orders">Orders</button>
+        <button onclick="switchAdminTab('customers')" class="admin-tab-btn px-4 py-2 border-b border-border font-medium" data-tab="customers">Customers</button>
+        <button onclick="switchAdminTab('menu')" class="admin-tab-btn px-4 py-2 border-b border-border font-medium" data-tab="menu">Menu</button>
+        <button onclick="switchAdminTab('reports')" class="admin-tab-btn px-4 py-2 border-b border-border font-medium" data-tab="reports">Reports</button>
+      </div>
+
+      <!-- Overview Tab -->
+      <div id="admin-overview" class="admin-tab-content">
+        <div class="grid md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-card p-6 rounded-lg shadow-md">
+            <div class="text-3xl font-bold" id="stat-orders">0</div>
+            <div class="text-muted-foreground">Total Orders</div>
+          </div>
+          <div class="bg-card p-6 rounded-lg shadow-md">
+            <div class="text-3xl font-bold" id="stat-revenue">₹0</div>
+            <div class="text-muted-foreground">Total Revenue</div>
+          </div>
+          <div class="bg-card p-6 rounded-lg shadow-md">
+            <div class="text-3xl font-bold" id="stat-customers">0</div>
+            <div class="text-muted-foreground">Total Customers</div>
+          </div>
+          <div class="bg-card p-6 rounded-lg shadow-md">
+            <div class="text-3xl font-bold" id="stat-items">0</div>
+            <div class="text-muted-foreground">Menu Items</div>
+          </div>
+        </div>
+        <div class="bg-card p-6 rounded-lg shadow-md">
+          <h2 class="text-xl font-bold mb-4">Recent Orders</h2>
+          <div id="recent-orders" class="overflow-x-auto">
+            <!-- Recent orders table will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Tab -->
+      <div id="admin-orders" class="admin-tab-content hidden">
+        <div class="mb-4 flex gap-2">
+          <input type="text" id="order-search" placeholder="Search by order ID or customer name" class="flex-1 px-4 py-2 border border-border rounded-lg">
+          <button onclick="openOrderModal()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">+ New Order</button>
+        </div>
+        <div class="overflow-x-auto bg-card rounded-lg shadow-md">
+          <table class="w-full text-sm">
+            <thead class="bg-muted border-b">
+              <tr>
+                <th class="px-4 py-2 text-left">Order ID</th>
+                <th class="px-4 py-2 text-left">Customer</th>
+                <th class="px-4 py-2 text-left">Items</th>
+                <th class="px-4 py-2 text-left">Total</th>
+                <th class="px-4 py-2 text-left">Status</th>
+                <th class="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody">
+              <!-- Orders will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Customers Tab -->
+      <div id="admin-customers" class="admin-tab-content hidden">
+        <div class="mb-4 flex gap-2">
+          <input type="text" id="customer-search" placeholder="Search by name or mobile" class="flex-1 px-4 py-2 border border-border rounded-lg">
+          <button onclick="openCustomerModal()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">+ Add Customer</button>
+        </div>
+        <div class="overflow-x-auto bg-card rounded-lg shadow-md">
+          <table class="w-full text-sm">
+            <thead class="bg-muted border-b">
+              <tr>
+                <th class="px-4 py-2 text-left">Name</th>
+                <th class="px-4 py-2 text-left">Mobile</th>
+                <th class="px-4 py-2 text-left">Address</th>
+                <th class="px-4 py-2 text-left">Orders</th>
+                <th class="px-4 py-2 text-left">Spent</th>
+                <th class="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customers-tbody">
+              <!-- Customers will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Menu Tab -->
+      <div id="admin-menu" class="admin-tab-content hidden">
+        <div class="mb-4 flex gap-2">
+          <select id="menu-category-admin" class="px-4 py-2 border border-border rounded-lg">
+            <option value="">All Categories</option>
+          </select>
+          <button onclick="openMenuItemModal()" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition">+ Add Item</button>
+        </div>
+        <div class="overflow-x-auto bg-card rounded-lg shadow-md">
+          <table class="w-full text-sm">
+            <thead class="bg-muted border-b">
+              <tr>
+                <th class="px-4 py-2 text-left">Image</th>
+                <th class="px-4 py-2 text-left">Name</th>
+                <th class="px-4 py-2 text-left">Category</th>
+                <th class="px-4 py-2 text-left">Price</th>
+                <th class="px-4 py-2 text-left">Description</th>
+                <th class="px-4 py-2 text-left">Available</th>
+                <th class="px-4 py-2 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="menu-items-tbody">
+              <!-- Menu items will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Reports Tab -->
+      <div id="admin-reports" class="admin-tab-content hidden">
+        <div class="report-tabs mb-6 flex gap-2">
+          <button onclick="showReport('daily', this)" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition">Daily</button>
+          <button onclick="showReport('monthly', this)" class="px-4 py-2 bg-card rounded-lg hover:bg-muted transition">Monthly</button>
+          <button onclick="showReport('yearly', this)" class="px-4 py-2 bg-card rounded-lg hover:bg-muted transition">Yearly</button>
+        </div>
+        <div id="report-container" class="space-y-6">
+          <!-- Reports will be rendered here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Screen -->
+  <div id="screen-checkout" data-screen>
+    <div class="max-w-4xl mx-auto px-4 py-8">
+      <h1 class="text-3xl font-bold mb-6">Checkout</h1>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div class="md:col-span-2">
+          <form id="checkout-form" class="space-y-6">
+            <div class="bg-card p-6 rounded-lg shadow-md">
+              <h2 class="text-xl font-bold mb-4">Delivery Details</h2>
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Name</label>
+                  <input type="text" id="checkout-name" class="w-full px-4 py-2 border border-border rounded-lg" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Mobile</label>
+                  <input type="tel" id="checkout-mobile" class="w-full px-4 py-2 border border-border rounded-lg" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Address</label>
+                  <textarea id="checkout-address" class="w-full px-4 py-2 border border-border rounded-lg" rows="3" required></textarea>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Order Type</label>
+                  <select id="checkout-type" class="w-full px-4 py-2 border border-border rounded-lg">
+                    <option>Delivery</option>
+                    <option>Pickup</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-card p-6 rounded-lg shadow-md">
+              <h2 class="text-xl font-bold mb-4">Payment Method</h2>
+              <div class="space-y-2">
+                <label class="flex items-center"><input type="radio" name="payment" value="Cash on Delivery" checked> Cash on Delivery</label>
+                <label class="flex items-center"><input type="radio" name="payment" value="UPI"> UPI</label>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="bg-card p-6 rounded-lg shadow-md h-fit sticky top-20">
+          <h2 class="text-xl font-bold mb-4">Order Summary</h2>
+          <div id="checkout-summary" class="space-y-2 mb-4 max-h-48 overflow-y-auto">
+            <!-- Order summary will be rendered here -->
+          </div>
+          <div class="space-y-2 mb-4 border-t pt-4">
+            <div class="flex justify-between"><span>Subtotal:</span><span id="co-subtotal">₹0</span></div>
+            <div class="flex justify-between"><span>Delivery:</span><span id="co-delivery">₹0</span></div>
+            <div class="flex justify-between font-bold text-lg"><span>Total:</span><span id="co-total">₹0</span></div>
+          </div>
+          <button onclick="placeOrder()" class="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition">Place Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Order Modal -->
+  <div id="order-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-6">
+        <h2 id="order-modal-title" class="text-2xl font-bold mb-4">Add Order</h2>
+        <form id="order-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Customer Name</label>
+            <input type="text" id="om-name" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Mobile</label>
+            <input type="tel" id="om-mobile" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Item</label>
+            <select id="om-item-sel" class="w-full px-4 py-2 border border-border rounded-lg"></select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Quantity</label>
+            <input type="number" id="om-qty" value="1" min="1" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Status</label>
+            <select id="om-status" class="w-full px-4 py-2 border border-border rounded-lg">
+              <option>Pending</option>
+              <option>Confirmed</option>
+              <option>Preparing</option>
+              <option>Ready</option>
+              <option>Out for Delivery</option>
+              <option>Delivered</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('order-modal')" class="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted transition">Cancel</button>
+            <button type="button" onclick="saveOrder()" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Modal -->
+  <div id="customer-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-6">
+        <h2 id="customer-modal-title" class="text-2xl font-bold mb-4">Add Customer</h2>
+        <form id="customer-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Name</label>
+            <input type="text" id="cm-name" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Mobile</label>
+            <input type="tel" id="cm-mobile" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Address</label>
+            <textarea id="cm-address" class="w-full px-4 py-2 border border-border rounded-lg" rows="2"></textarea>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('customer-modal')" class="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted transition">Cancel</button>
+            <button type="button" onclick="saveCustomer()" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu Item Modal -->
+  <div id="menu-item-modal" class="modal">
+    <div class="modal-content">
+      <div class="p-6">
+        <h2 id="menu-item-modal-title" class="text-2xl font-bold mb-4">Add Menu Item</h2>
+        <form id="menu-item-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Name</label>
+            <input type="text" id="mi-name" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Category</label>
+            <select id="mi-category" class="w-full px-4 py-2 border border-border rounded-lg">
+              <option>Breakfast</option>
+              <option>Lunch</option>
+              <option>Dinner</option>
+              <option>Tiffin</option>
+              <option>Snacks</option>
+              <option>Sweets</option>
+              <option>Beverages</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Price (₹)</label>
+            <input type="number" id="mi-price" step="0.01" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Description</label>
+            <textarea id="mi-desc" class="w-full px-4 py-2 border border-border rounded-lg" rows="2"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-2">Image URL</label>
+            <input type="url" id="mi-image" class="w-full px-4 py-2 border border-border rounded-lg">
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('menu-item-modal')" class="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-muted transition">Cancel</button>
+            <button type="button" onclick="saveMenuItem()" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill Modal -->
+  <div id="bill-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-2xl font-bold">Invoice</h2>
+          <button onclick="closeModal('bill-modal')" class="text-2xl">&times;</button>
+        </div>
+        <div id="bill-body" class="mb-4 max-h-96 overflow-y-auto">
+          <!-- Bill content will be rendered here -->
+        </div>
+        <div class="flex gap-2">
+          <button onclick="printBill()" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">Print</button>
+          <button onclick="sendBillWhatsApp()" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Send WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
